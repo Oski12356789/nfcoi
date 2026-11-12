@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Console</title>
+
+<style>
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    color: #00ff35;
+    font-family: Consolas, monospace;
+    overflow: hidden;
+}
+
+#start {
+    position: fixed;
+    inset: 0;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #00ff35;
+    gap: 20px;
+    text-align: center;
+}
+
+button {
+    background: black;
+    color: #00ff35;
+    border: 2px solid #00ff35;
+    padding: 15px 25px;
+    font-family: inherit;
+    font-size: 18px;
+}
+
+#terminal {
+    display: none;
+    padding: 10px;
+    font-size: 13px;
+    line-height: 1.35;
+    overflow: hidden;
+    height: 100%;
+    overflow-wrap: anywhere;
+}
+
+#fullscreen {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#ending {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: black;
+    align-items: center;
+    justify-content: center;
+    color: #00ff35;
+    font-size: 35px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start">
+    <h2>SYSTEM CONSOLE</h2>
+    <p>Włącz dźwięk symulacji?</p>
+    <button onclick="begin()">AKCEPTUJ</button>
+</div>
+
+<div id="terminal"></div>
+
+<button id="fullscreen" style="display:none"
+onclick="goFullscreen()">FULL SCREEN</button>
+
+<div id="ending">
+    ALE FRAJER
+</div>
+
+<script>
+let audio;
+let oscillator;
+let gain;
+let timer;
+let soundTimer;
+let lines = 0;
+
+const terminal = document.getElementById("terminal");
+
+const messages = [
+"Initializing system...",
+"Loading modules...",
+"Checking network...",
+"Analyzing local environment...",
+"Verifying connection...",
+"Running diagnostics...",
+"System response received...",
+"Checking security status...",
+"Synchronizing processes...",
+"Simulation running..."
+];
+
+function begin() {
+    document.getElementById("start").style.display = "none";
+    terminal.style.display = "block";
+    document.getElementById("fullscreen").style.display = "block";
+
+    // Dźwięk na aktualnym poziomie głośności telefonu.
+    try {
+        audio = new (window.AudioContext || window.webkitAudioContext)();
+        oscillator = audio.createOscillator();
+        gain = audio.createGain();
+
+        oscillator.type = "sawtooth";
+        oscillator.frequency.value = 650;
+        gain.gain.value = 0.018;
+
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+        oscillator.start();
+
+        let high = false;
+        soundTimer = setInterval(() => {
+            high = !high;
+            oscillator.frequency.setTargetAtTime(
+                high ? 850 : 620,
+                audio.currentTime,
+                0.08
+            );
+        }, 500);
+    } catch(e) {}
+
+    timer = setInterval(writeLine, 65);
+
+    // Automatyczny koniec po 2 minutach.
+    setTimeout(finish, 120000);
+}
+
+function writeLine() {
+    if (lines > 100) {
+        terminal.innerHTML = "";
+        lines = 0;
+    }
+
+    const line = document.createElement("div");
+    const random = Math.random().toString(16).substring(2, 10);
+
+    line.textContent =
+        "> " +
+        messages[Math.floor(Math.random() * messages.length)] +
+        " 0x" + random;
+
+    terminal.appendChild(line);
+    lines++;
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function goFullscreen() {
+    const result = document.documentElement.requestFullscreen?.();
+
+    if (result && result.catch) {
+        result.catch(() => {});
+    }
+
+    document.getElementById("fullscreen").style.display = "none";
+}
+
+function finish() {
+    clearInterval(timer);
+    clearInterval(soundTimer);
+
+    if (oscillator) {
+        try { oscillator.stop(); } catch(e) {}
+    }
+
+    if (audio) {
+        audio.close();
+    }
+
+    terminal.style.display = "none";
+    document.getElementById("ending").style.display = "flex";
+}
+</script>
+
+</body>
+</html>
